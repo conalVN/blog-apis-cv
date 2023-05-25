@@ -99,12 +99,23 @@ const getPostById = async (req, res) => {
     const data = await Post.findById({ _id: id }).populate("thumbnail");
     postData.data = data;
     postData.related = [];
+    const arr = [];
     await Promise.all(
       data?.categories?.map(async (cate) => {
         const related = await Post.find({ categories: { $in: [cate] } });
-        postData.related.push(...related);
+        arr.push(...related);
       })
     );
+    const newArr = arr.filter((obj, index, array) => {
+      console.log(`run filter duplicate arr`);
+      return (
+        index ===
+        array.findIndex(
+          (item) => item?._id.equals(obj?._id) && item?.title === obj?.title
+        )
+      );
+    });
+    postData.related.push(...newArr);
     res.json(postData);
   } catch (error) {
     console.log(error);
