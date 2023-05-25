@@ -14,12 +14,12 @@ const getAll = async (req, res) => {
 const getPostsWithQuery = async (req, res) => {
   try {
     const page = req.query.page || 1;
-    const tag = req.query.tag;
+    const category = req.query.category;
     const perPage = 9;
     const start = (page - 1) * perPage;
 
-    if (tag) {
-      const posts = await Post.find({ categories: { $in: [tag] } })
+    if (category) {
+      const posts = await Post.find({ categories: { $in: [category] } })
         .populate("thumbnail")
         .skip(start)
         .limit(perPage)

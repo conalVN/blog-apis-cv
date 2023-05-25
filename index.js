@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 connectDatabase(URL);
 
 // router
-app.get("", (req, res) => res.send("Server on"));
+app.get("/", (req, res) => res.send("Server on"));
 app.use("/api/system", systemRouter);
 app.use("/api/posts", postRouter);
 
