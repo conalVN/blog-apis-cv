@@ -107,7 +107,6 @@ const getPostById = async (req, res) => {
       })
     );
     const newArr = arr.filter((obj, index, array) => {
-      console.log(`run filter duplicate arr`);
       return (
         index ===
         array.findIndex(
