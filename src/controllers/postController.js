@@ -15,7 +15,7 @@ const getPostsWithQuery = async (req, res) => {
   try {
     const page = req.query.page || 1;
     const category = req.query.category;
-    const perPage = 9;
+    const perPage = 12;
     const start = (page - 1) * perPage;
 
     if (category) {
