@@ -11,11 +11,17 @@ const login = async (req, res) => {
         const token = jwt.sign({ id: account?._id }, process.env.SECRET_KEY, {
           expiresIn: "1d",
         });
-        console.log(token);
-        res.cookie("token", token);
-        res.status(200).json({
-          message: "Welcome to the admin dashboard",
-        });
+        res
+          .cookie("key", token, {
+            sameSite: "none",
+            secure: true,
+            domain: "myapp.vercel.app",
+            httpOnly: true,
+          })
+          .status(200)
+          .json({
+            message: "Welcome to the admin dashboard",
+          });
       } else {
         res.status(401).json({
           message: "Access denied. User must be an admin.",
