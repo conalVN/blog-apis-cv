@@ -4,7 +4,6 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const connectDatabase = require("./src/config/connectDatabase");
-// const checkAdmin = require("./src/middleware/checkAdmin");
 const systemRouter = require("./src/routes/system");
 const postRouter = require("./src/routes/post");
 const userRouter = require("./src/routes/user");

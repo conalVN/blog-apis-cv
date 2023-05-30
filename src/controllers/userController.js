@@ -11,11 +11,11 @@ const login = async (req, res) => {
         const token = jwt.sign({ id: account?._id }, process.env.SECRET_KEY, {
           expiresIn: "1d",
         });
+
         res
           .cookie("key", token, {
             sameSite: "none",
             secure: true,
-            domain: "myapp.vercel.app",
             httpOnly: true,
           })
           .status(200)
