@@ -7,6 +7,7 @@ const UserSchema = new Schema(
     email: { type: String, require: true },
     password: { type: String, require: true },
     role: { type: String, require: true },
+    verify_at: { type: String },
   },
   {
     timestamps: true,

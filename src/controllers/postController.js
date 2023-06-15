@@ -1,4 +1,8 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const Post = require("../models/Post");
+const Comment = require("../models/Comment");
+const CommentThread = require("../models/CommentThread");
 
 const getAll = async (req, res) => {
   try {
@@ -96,7 +100,9 @@ const getPostById = async (req, res) => {
   try {
     const { id } = req.params;
     let postData = {};
-    const data = await Post.findById({ _id: id }).populate("thumbnail");
+    const data = await Post.findById({ _id: id })
+      .populate("thumbnail")
+      .populate("comments");
     postData.data = data;
     postData.related = [];
     const arr = [];
@@ -115,10 +121,61 @@ const getPostById = async (req, res) => {
       );
     });
     postData.related.push(...newArr);
-    res.json(postData);
+    res.status(201).json(postData);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Can't get post by id" });
+  }
+};
+const getCommentThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const commentThread = await CommentThread.findOne({ post: id }).populate({
+      path: "comments",
+      populate: {
+        path: "user",
+        model: "User",
+        select: "username",
+      },
+    });
+    res.status(201).json(commentThread);
+  } catch (error) {
+    res.status(500).json({ err: error });
+  }
+};
+
+const createComment = async (req, res) => {
+  try {
+    const token = req.cookies["access-token"];
+    const user = jwt.verify(token, process.env.SECRET_KEY);
+    const { id } = req.params;
+    const { comment } = req.body;
+    // create new comment
+    const dataComment = await Comment.create({
+      textDisplay: comment,
+      user: user?.userId,
+    });
+    // push thread or create new
+    let commentThread = await CommentThread.findOne({ post: id });
+    if (!commentThread) {
+      commentThread = CommentThread.create({
+        post: id,
+        comments: [dataComment._id],
+      });
+    } else {
+      commentThread.comments.push(dataComment._id);
+      await commentThread.save();
+    }
+    const newPost = await Post.findOneAndUpdate(
+      { _id: id },
+      { comments: commentThread._id }
+    );
+    await newPost.save();
+
+    res.status(201).json({ message: "Comment added successfully" });
+  } catch (error) {
+    res.status(500).json({ error });
+    console.log(error);
   }
 };
 
@@ -129,4 +186,6 @@ module.exports = {
   getPostById,
   getTags,
   getRandom,
+  getCommentThread,
+  createComment,
 };

@@ -8,6 +8,7 @@ const PostSchema = new Schema(
     categories: { type: Array, require: false },
     thumbnail: { type: Schema.Types.ObjectId, ref: "Image", require: true },
     content: { type: String, require: true },
+    comments: { type: Schema.Types.ObjectId, ref: "CommentThread" },
   },
   {
     timestamps: true,

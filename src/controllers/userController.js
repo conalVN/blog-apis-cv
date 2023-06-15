@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const formatDate = require("../config/formatDate");
 
 const login = async (req, res) => {
   try {
@@ -21,7 +22,8 @@ const login = async (req, res) => {
     const token = jwt.sign({ userId: account._id }, process.env.SECRET_KEY, {
       expiresIn: "3d",
     });
-    res.json({ token });
+    res.cookie("access-token", token, { httpOnly: true });
+    res.status(201).json({ message: "Login successful!" });
   } catch (error) {
     console.log(err);
     res.status(500).json({ message: "Server error" });
@@ -41,6 +43,7 @@ const register = async (req, res) => {
       email,
       password: hashPass,
       role: "user",
+      verify_at: null,
     });
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
     const verificationUrl = `${process.env.URL_CLIENT}/verify?token=${token}`;
@@ -48,19 +51,19 @@ const register = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "dvt12a4008@gmail.com",
-        pass: "mjdkkuwxptchkmgd",
+        user: process.env.FROM,
+        pass: process.env.PASS,
       },
     });
     // email options
     const mailOptions = {
-      from: "dvt12a4008@gmail.com",
+      from: process.env.FROM,
       to: email,
       subject: "Email Verification",
       html: `
       <div>
-        <p>Please click the following to verify your email:
-          <a href="${verificationUrl}">${verificationUrl}</a>
+        <p>Hi ${username}! Please click the following to verify your email:
+          <a href="${verificationUrl}">Click here</a>
         </p>
       </div>`,
     };
@@ -68,15 +71,31 @@ const register = async (req, res) => {
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         console.log(err);
-      } else {
-        console.log(info);
       }
     });
 
-    res.status(201).json({ message: "Register successful!" });
+    res.status(201).json({ message: "Check your verification email" });
   } catch (error) {
     res.status(500).json({ message: "Registration failed" });
   }
 };
 
-module.exports = { login, register };
+const verify = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const user = jwt.verify(token, process.env.SECRET_KEY);
+    const time = formatDate(new Date());
+    if (user) {
+      User.findOneAndUpdate(
+        { _id: user.userId },
+        { $set: { verify_at: time } },
+        { new: true, upsert: true, returnNewDocument: true }
+      );
+      res.status(201).json({ message: "Email verification successful." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { login, register, verify };
