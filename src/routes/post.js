@@ -10,5 +10,6 @@ router.get("/random", postController.getRandom);
 router.get("/:id/commentThread", postController.getCommentThread);
 router.get("/:id", postController.getPostById);
 router.post("/:id/comment", postController.createComment);
+router.delete("/comments/:id", postController.deleteComment);
 
 module.exports = router;

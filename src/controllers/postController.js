@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const CommentThread = require("../models/CommentThread");
+const mongoose = require("mongoose");
 
 const getAll = async (req, res) => {
   try {
@@ -143,7 +144,6 @@ const getCommentThread = async (req, res) => {
     res.status(500).json({ err: error });
   }
 };
-
 const createComment = async (req, res) => {
   try {
     const token = req.cookies["access-token"];
@@ -178,6 +178,36 @@ const createComment = async (req, res) => {
     console.log(error);
   }
 };
+const deleteComment = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const commentThread = await CommentThread.findOne({
+      comments: { $elemMatch: { $eq: id } },
+    });
+    if (!commentThread) {
+      // Comment thread not found or comment does not exist
+      return res.status(404).json({ message: "Comment not found" });
+    }
+    const commentObjectId = new mongoose.Types.ObjectId(id);
+    const commentIndex = commentThread?.comments?.findIndex((item) => {
+      return item.equals(commentObjectId);
+    });
+    if (commentIndex !== -1) {
+      commentThread.comments?.splice(commentIndex, 1);
+      commentThread.save();
+      await Comment.findByIdAndDelete({ _id: id });
+      // Comment đã được xóa khỏi mảng comments
+      // Xử lý sau khi xóa thành công
+      res.status(201).json({ message: "Delete comment successful!" });
+    } else {
+      // Comment không tìm thấy trong mảng comments
+      // Xử lý trường hợp này
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
 
 module.exports = {
   getAll,
@@ -188,4 +218,5 @@ module.exports = {
   getRandom,
   getCommentThread,
   createComment,
+  deleteComment,
 };
