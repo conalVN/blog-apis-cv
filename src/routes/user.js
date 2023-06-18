@@ -4,6 +4,6 @@ const router = express.Router();
 
 router.post("/login", userController.login);
 router.post("/register", userController.register);
-router.get("/verify", userController.verify);
+router.post("/verify", userController.verify);
 
 module.exports = router;

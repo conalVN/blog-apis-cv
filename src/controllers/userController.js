@@ -10,32 +10,48 @@ const login = async (req, res) => {
     // check email exists or not
     const account = await User.findOne({ email: email });
     if (!account) {
-      res.status(401).json({
+      return res.status(401).json({
+        success: false,
         message: "Account does not exist. Please register a new account",
       });
     }
     // check password
     const passMatch = bcrypt.compareSync(password, account.password);
     if (!passMatch) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid username or password" });
     }
     const token = jwt.sign({ userId: account._id }, process.env.SECRET_KEY, {
       expiresIn: "3d",
     });
-    res.cookie("access-token", token, { httpOnly: true });
-    res.status(201).json({ message: "Login successful!" });
+    res
+      .status(200)
+      .json({ success: true, message: "Login successful!", token });
   } catch (error) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server login error!", error: error });
   }
 };
 
 const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    if (!username || !email || !password)
+      return res
+        .status(400)
+        .json({ message: "Username and password are required." });
+    const duplicateUsername = await User.findOne({ username: username });
+    if (duplicateUsername)
+      return res
+        .status(409)
+        .json({ success: false, message: "Username already used" });
     const isUser = await User.findOne({ email: email });
     if (isUser) {
-      return res.status(409).json({ message: "Username already exists" });
+      return res
+        .status(409)
+        .json({ message: "Email is already in use. Please signin!" });
     }
     const hashPass = bcrypt.hashSync(password, 12);
     const user = await User.create({
@@ -74,16 +90,21 @@ const register = async (req, res) => {
       }
     });
 
-    res.status(201).json({ message: "Check your verification email" });
+    res
+      .status(201)
+      .json({ success: true, message: "Check your verification email" });
   } catch (error) {
-    res.status(500).json({ message: "Registration failed" });
+    res.status(500).json({ success: false, message: "Registration failed" });
   }
 };
 
 const verify = async (req, res) => {
   try {
-    const { token } = req.query;
+    const { token } = req.body;
     const user = jwt.verify(token, process.env.SECRET_KEY);
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Login faild!" });
+    }
     const time = formatDate(new Date());
     if (user) {
       User.findOneAndUpdate(
