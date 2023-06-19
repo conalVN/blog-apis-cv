@@ -101,6 +101,8 @@ const register = async (req, res) => {
     const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
 
     const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: "587",
       service: "gmail",
       auth: {
         user: process.env.FROM,
