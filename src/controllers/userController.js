@@ -1,8 +1,14 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
+const createError = require("http-errors");
 const User = require("../models/User");
 const formatDate = require("../config/formatDate");
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} = require("../helpers/jwt_services");
 
 const login = async (req, res) => {
   try {
@@ -15,6 +21,9 @@ const login = async (req, res) => {
         message: "Account does not exist. Please register a new account",
       });
     }
+    if (account.verify_at === null) {
+      return res.send({ message: "Please verify your email to login" });
+    }
     // check password
     const passMatch = bcrypt.compareSync(password, account.password);
     if (!passMatch) {
@@ -22,13 +31,40 @@ const login = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Invalid username or password" });
     }
-    const token = jwt.sign({ userId: account._id }, process.env.SECRET_KEY, {
-      expiresIn: "3d",
+    const accessToken = await signAccessToken(account._id, "10m");
+    const refreshToken = await signRefreshToken(account._id, "1y");
+
+    // const newRefreshToken = jwt.sign(
+    //   {
+    //     username: account.username,
+    //   },
+    //   process.env.REFRESH_SECRET_KEY,
+    //   { expiresIn: "35s" }
+    // );
+    // let newRefreshTokenArray = !cookies?.jwt
+    //   ? account.refreshToken
+    //   : account.refreshToken?.filter((rt) => rt !== cookies?.jwt);
+
+    // if (cookies?.jwt) {
+    //   /*
+    //   Scenario added here:
+    //       1) User logs in but never uses RT and does not logout
+    //       2) RT is stolen
+    //       3) If 1 & 2, reuse detection is needed to clear all RTs when user logs in
+    //   */
+    //  const refreshToken = cookies.jwt
+
+    // }
+
+    res.cookie("access-token", accessToken);
+    res.status(200).json({
+      success: true,
+      message: "Login successful!",
+      accessToken,
+      refreshToken,
     });
-    res
-      .status(200)
-      .json({ success: true, message: "Login successful!", token });
   } catch (error) {
+    console.log(error);
     res
       .status(500)
       .json({ success: false, message: "Server login error!", error: error });
@@ -58,11 +94,11 @@ const register = async (req, res) => {
       username,
       email,
       password: hashPass,
-      role: "user",
+      role: 0,
       verify_at: null,
     });
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
-    const verificationUrl = `${process.env.URL_CLIENT}/verify?token=${token}`;
+    const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -100,23 +136,49 @@ const register = async (req, res) => {
 
 const verify = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token } = req.params;
     const user = jwt.verify(token, process.env.SECRET_KEY);
     if (!user) {
       return res.status(401).json({ success: false, message: "Login faild!" });
     }
-    const time = formatDate(new Date());
-    if (user) {
-      User.findOneAndUpdate(
-        { _id: user.userId },
-        { $set: { verify_at: time } },
-        { new: true, upsert: true, returnNewDocument: true }
-      );
-      res.status(201).json({ message: "Email verification successful." });
-    }
+    User.findOne({ _id: user?.userId }).then(async (data) => {
+      if (!data) {
+        return res.status(404).json({ message: "User not found." });
+      }
+      const time = formatDate(new Date());
+      data.verify_at = time;
+      await data.save();
+      res
+        .status(201)
+        .json({ message: "Verification successful. You can now log in." });
+    });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { login, register, verify };
+const refreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) throw createError.BadRequest();
+    const { data } = await verifyRefreshToken(refreshToken);
+    // create new token
+    const accessToken = await signAccessToken(data);
+    const refresh = await signRefreshToken(data);
+    res.json({ accessToken, refreshToken: refresh });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    res.clearCookie("access-token");
+    res.send({ message: "Logout success!" });
+  } catch (error) {
+    res.json({ message: "Logout faild! Error server" });
+  }
+};
+
+module.exports = { login, logout, register, verify, refreshToken };

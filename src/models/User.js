@@ -3,10 +3,10 @@ const { Schema, model } = mongoose;
 
 const UserSchema = new Schema(
   {
-    username: { type: String },
-    email: { type: String, require: true },
+    username: { type: String, require: true, unique: true },
+    email: { type: String, require: true, unique: true },
     password: { type: String, require: true },
-    role: { type: String, require: true },
+    role: { type: Number, require: true },
     verify_at: { type: String },
   },
   {
