@@ -89,6 +89,7 @@ const register = async (req, res) => {
         user: process.env.FROM,
         pass: process.env.PASS,
       },
+      secure: false,
     });
     // email options
     const mailOptions = {
