@@ -8,6 +8,7 @@ const {
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  verifyAccessToken,
 } = require("../helpers/jwt_services");
 
 const login = async (req, res) => {
@@ -31,33 +32,12 @@ const login = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Invalid username or password" });
     }
-    const accessToken = await signAccessToken(account._id, "10m");
+    const accessToken = await signAccessToken(account._id, "1d");
     const refreshToken = await signRefreshToken(account._id, "1y");
-
-    // const newRefreshToken = jwt.sign(
-    //   {
-    //     username: account.username,
-    //   },
-    //   process.env.REFRESH_SECRET_KEY,
-    //   { expiresIn: "35s" }
-    // );
-    // let newRefreshTokenArray = !cookies?.jwt
-    //   ? account.refreshToken
-    //   : account.refreshToken?.filter((rt) => rt !== cookies?.jwt);
-
-    // if (cookies?.jwt) {
-    //   /*
-    //   Scenario added here:
-    //       1) User logs in but never uses RT and does not logout
-    //       2) RT is stolen
-    //       3) If 1 & 2, reuse detection is needed to clear all RTs when user logs in
-    //   */
-    //  const refreshToken = cookies.jwt
-
-    // }
 
     res.cookie("access-token", accessToken);
     res.status(200).json({
+      userId: account._id,
       success: true,
       message: "Login successful!",
       accessToken,
@@ -97,7 +77,8 @@ const register = async (req, res) => {
       role: 0,
       verify_at: null,
     });
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
+    // const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
+    const token = signAccessToken({ userId: user._id }, "15m");
     const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
 
     const transporter = nodemailer.createTransport({

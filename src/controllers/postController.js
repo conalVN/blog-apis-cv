@@ -147,13 +147,13 @@ const getCommentThread = async (req, res) => {
 const createComment = async (req, res) => {
   try {
     const token = req.cookies["access-token"];
-    const user = jwt.verify(token, process.env.SECRET_KEY);
     const { id } = req.params;
     const { comment } = req.body;
+    const user = jwt.verify(token, process.env.SECRET_KEY);
     // create new comment
     const dataComment = await Comment.create({
       textDisplay: comment,
-      user: user?.userId,
+      user: user?.data,
     });
     // push thread or create new
     let commentThread = await CommentThread.findOne({ post: id });
