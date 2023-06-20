@@ -85,11 +85,11 @@ const register = async (req, res) => {
       host: "smtp.gmail.com",
       port: "587",
       service: "gmail",
+      secure: true,
       auth: {
         user: process.env.FROM,
         pass: process.env.PASS,
       },
-      secure: false,
     });
     // email options
     const mailOptions = {
@@ -107,6 +107,9 @@ const register = async (req, res) => {
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         console.log(err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Email sending failed" });
       }
     });
 
