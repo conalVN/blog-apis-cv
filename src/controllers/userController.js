@@ -85,7 +85,7 @@ const register = async (req, res) => {
       host: "smtp.gmail.com",
       port: "587",
       service: "gmail",
-      secure: true,
+      secure: false, // true for 465
       auth: {
         user: process.env.FROM,
         pass: process.env.PASS,
@@ -93,7 +93,7 @@ const register = async (req, res) => {
     });
     // email options
     const mailOptions = {
-      from: process.env.FROM,
+      from: `"Coanl Blog" <${process.env.FROM}>`,
       to: email,
       subject: "Email Verification",
       html: `
