@@ -78,44 +78,47 @@ const register = async (req, res) => {
       verify_at: null,
     });
     // const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
-    const token = signAccessToken({ userId: user._id }, "15m");
-    const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
+    signAccessToken({ userId: user._id }, "15m")
+      .then((token) => {
+        const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: "587",
-      service: "gmail",
-      secure: false, // true for 465
-      auth: {
-        user: process.env.FROM,
-        pass: process.env.PASS,
-      },
-    });
-    // email options
-    const mailOptions = {
-      from: `"Coanl Blog" <${process.env.FROM}>`,
-      to: email,
-      subject: "Email Verification",
-      html: `
+        const transporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: "587",
+          service: "gmail",
+          secure: false, // true for 465
+          auth: {
+            user: process.env.FROM,
+            pass: process.env.PASS,
+          },
+        });
+        // email options
+        const mailOptions = {
+          from: `"Coanl Blog" <${process.env.FROM}>`,
+          to: email,
+          subject: "Email Verification",
+          html: `
       <div>
         <p>Hi ${username}! Please click the following to verify your email:
           <a href="${verificationUrl}">Click here</a>
         </p>
       </div>`,
-    };
+        };
 
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        console.log(err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Email sending failed" });
-      }
-    });
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) {
+            console.log(err);
+            return res
+              .status(500)
+              .json({ success: false, message: "Email sending failed" });
+          }
+        });
 
-    res
-      .status(201)
-      .json({ success: true, message: "Check your verification email" });
+        res
+          .status(201)
+          .json({ success: true, message: "Check your verification email" });
+      })
+      .catch((err) => console.log(err));
   } catch (error) {
     res.status(500).json({ success: false, message: "Registration failed" });
   }
@@ -128,7 +131,7 @@ const verify = async (req, res) => {
     if (!user) {
       return res.status(401).json({ success: false, message: "Login faild!" });
     }
-    User.findOne({ _id: user?.userId }).then(async (data) => {
+    User.findOne({ _id: user?.data?.userId }).then(async (data) => {
       if (!data) {
         return res.status(404).json({ message: "User not found." });
       }
