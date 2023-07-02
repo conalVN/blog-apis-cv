@@ -94,7 +94,7 @@ const register = async (req, res) => {
         });
         // email options
         const mailOptions = {
-          from: `"Coanl Blog" <${process.env.FROM}>`,
+          from: `"Conal Blog" <${process.env.FROM}>`,
           to: email,
           subject: "Email Verification",
           html: `
@@ -108,11 +108,14 @@ const register = async (req, res) => {
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
             console.log(err);
-            return res
-              .status(500)
-              .json({ success: false, message: "Email sending failed" });
+            return res.status(500).json({
+              success: false,
+              message: "Email sending failed",
+              err: err,
+            });
           }
         });
+        console.log(info);
 
         res
           .status(201)
