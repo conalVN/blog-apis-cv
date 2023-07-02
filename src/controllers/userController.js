@@ -91,8 +91,12 @@ const register = async (req, res) => {
             user: process.env.FROM,
             pass: process.env.PASS,
           },
+          tls: {
+            rejectUnauthorized: false,
+          },
         });
         // email options
+
         const mailOptions = {
           from: `"Conal Blog" <${process.env.FROM}>`,
           to: email,
@@ -115,7 +119,6 @@ const register = async (req, res) => {
             });
           }
         });
-        console.log(info);
 
         res
           .status(201)
