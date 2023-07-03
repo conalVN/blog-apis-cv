@@ -38,6 +38,7 @@ const login = async (req, res) => {
     res.cookie("access-token", accessToken);
     res.status(200).json({
       userId: account._id,
+      isAdmin: account.role,
       success: true,
       message: "Login successful!",
       accessToken,
