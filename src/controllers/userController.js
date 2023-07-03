@@ -115,14 +115,12 @@ const register = async (req, res) => {
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
             console.log(err);
-            reject(err);
             return res.status(500).json({
               success: false,
               message: "Email sending failed",
               err: err,
             });
           } else {
-            resolve(info);
             res.status(201).json({
               success: true,
               message: "Check your verification email",
