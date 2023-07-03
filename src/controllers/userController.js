@@ -83,20 +83,23 @@ const register = async (req, res) => {
         const verificationUrl = `${process.env.URL_CLIENT}/verify/${token}`;
 
         const transporter = nodemailer.createTransport({
-          host: "smtp.gmail.com",
-          port: "587",
           service: "gmail",
-          secure: false, // true for 465
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true,
           auth: {
+            type: "OAuth2",
             user: process.env.FROM,
             pass: process.env.PASS,
+            clientId: process.env.OAUTH_CLIENTID,
+            clientSecret: process.env.OAUTH_CLIENT_SECRET,
+            refreshToken: process.env.OAUTH_REFRESH_TOKEN,
           },
           tls: {
             rejectUnauthorized: false,
           },
         });
         // email options
-
         const mailOptions = {
           from: `"Conal Blog" <${process.env.FROM}>`,
           to: email,
@@ -112,17 +115,20 @@ const register = async (req, res) => {
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
             console.log(err);
+            reject(err);
             return res.status(500).json({
               success: false,
               message: "Email sending failed",
               err: err,
             });
+          } else {
+            resolve(info);
+            res.status(201).json({
+              success: true,
+              message: "Check your verification email",
+            });
           }
         });
-
-        res
-          .status(201)
-          .json({ success: true, message: "Check your verification email" });
       })
       .catch((err) => console.log(err));
   } catch (error) {
